@@ -3,7 +3,7 @@ var glShader = require('gl-shader');
 var glslify = require('glslify');
 
 var canvas = document.createElement('canvas');
-canvas.width = canvas.height = 128;
+canvas.width = canvas.height = 1024;
 document.body.appendChild(canvas);
 
 var gl = canvas.getContext('webgl');
