@@ -27,19 +27,24 @@ void main() {
     float cosPhi = vPosition.x / posLen;
     float phi = acos(cosPhi) * sign(vPosition.y);
 
-    float theta = PI_2 - acos(posLen);
-    float cosTheta = cos(theta);
+    float theta = acos(posLen) / PI_2;
+    theta = theta * theta;
+    theta = (1.0 - theta) * PI_2;
 
+    float cosTheta = cos(theta);
 
     vec3 vEye = sphericalDirection(
         sin(theta), cosTheta,
         sin(phi), cosPhi);
 
+    //*
     vEye = vec3(
         vEye.x,
         vEye.z,
         vEye.y);
-
+    /*/
+    vEye = vec3(vPosition, 1.0);
+    //*/
 
     //
     vec3 scatter = atmosphere(
@@ -47,7 +52,7 @@ void main() {
         vec3(0,6371e3,0),               // ray origin
 
         // sun pos
-        vec3(0, 1.5, +1),                        // position of the sun
+        vec3(0, -0.025, +1),             // position of the sun
 
         6371e3,                         // radius of the planet in meters
         6471e3,                         // radius of the atmosphere in meters
@@ -57,7 +62,7 @@ void main() {
         // mie: >= 3e-6 (pollution, water, dust)
 
         vec3(5.5e-6, 13.0e-6, 22.4e-6), // Rayleigh scattering coefficient
-        3e-6,                          // Mie scattering coefficient
+        21e-6,                          // Mie scattering coefficient
 
         // ozone in frostbite:
         // (3.426, 8.298, 0.356) m-1 x 6e-5%
