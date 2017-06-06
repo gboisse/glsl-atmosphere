@@ -6,10 +6,10 @@
 #define jStepGrowth 1.15
 
 // Frostbite, see the `a` in:
-// https://www.youtube.com/watch?v=zs0oYjwjNEo
+// https://youtu.be/zs0oYjwjNEo?t=5063
 // something related to Bruneton's 2008 paper.
 // not sure i'm applying this properly but whatever.
-#define mieExtinctionMul 1.11 // 1.11
+#define mieExtinctionMul 1.11 // 1.11 in frostbite
 
 // why the fuck do i need to crank this shit
 #define ozoMul 6.00
@@ -50,7 +50,9 @@ vec3 atmosphere1(
     vec2 p = rsi(r0, r, rAtmos);
     if (p.x > p.y) return vec3(0,0,0);
     p.y = min(p.y, rsi(r0, r, rPlanet).x);
-    float iStepSize = (p.y - p.x)
+
+    float iDist = p.y - p.x;
+    float iStepSize = iDist
                     / geometricSeries(iStepGrowth, float(iSteps));
 
     // Initialize the primary ray time.
@@ -136,7 +138,7 @@ if (i != -1) {
 
     // Calculate and return the final color.
     return phaseRlh * kRlh * totalRlh
-         + phaseMie * kMie * totalMie * mieExtinctionMul;
+         + phaseMie * kMie * totalMie;
 }
 
 
@@ -155,7 +157,8 @@ vec3 atmosphere2(
     vec2 p = rsi(r0, r, rAtmos);
     if (p.x > p.y) return vec3(0,0,0);
     p.y = min(p.y, rsi(r0, r, rPlanet).x);
-    float iStepSize = (p.y - p.x)
+    float iDist = p.y - p.x;
+    float iStepSize = iDist
                     / geometricSeries(iStepGrowth, float(iSteps));
 
     // Initialize the primary ray time.
@@ -227,7 +230,7 @@ if (i != -1) {
 
         // Calculate attenuation.
         vec3 attn = exp(
-            -(   kMie * (iOdMie + jOdMie)
+            -(   kMie * (iOdMie + jOdMie) * mieExtinctionMul
                + kRlh * (iOdRlh + jOdRlh)
                + kOzo * (iOdRlh + jOdRlh) * ozoMul));
 
@@ -242,7 +245,7 @@ if (i != -1) {
 
     // Calculate and return the final color.
     return phaseRlh * kRlh * totalRlh
-         + phaseMie * kMie * totalMie * mieExtinctionMul;
+         + phaseMie * kMie * totalMie;
 }
 
 
