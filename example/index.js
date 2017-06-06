@@ -35,13 +35,13 @@ var theta = 0;
 
 function render() {
     reflow();
-    theta += 0.0125;
+    // theta += 0.0125;
     gl.clear(gl.COLOR_BUFFER_BIT);
     program.bind();
     quad.bind(program);
-    program.uniforms.uSunPos = [0, Math.cos(theta) * 0.3 + 0.2, -1];
+    program.uniforms.uSunPos = [0, 0.1, -1];
     quad.draw();
-    requestAnimationFrame(render);
+    // requestAnimationFrame(render);
 }
 
 render();

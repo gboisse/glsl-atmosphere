@@ -2,6 +2,9 @@
 #define iSteps 16
 #define jSteps 8
 
+#define iStepGrowth 1.15
+#define jStepGrowth 1.15
+
 vec2 rsi(vec3 r0, vec3 rd, float sr) {
     // ray-sphere intersection that assumes
     // the sphere is centered at the origin.
@@ -17,7 +20,19 @@ vec2 rsi(vec3 r0, vec3 rd, float sr) {
     );
 }
 
-vec3 atmosphere(vec3 r, vec3 r0, vec3 pSun, float iSun, float rPlanet, float rAtmos, vec3 kRlh, float kMie, float shRlh, float shMie, float g) {
+float geometricSeries(float commonRatio, float numTerms) {
+    // Sum of first n terms in a geometric progression starting with 1:
+    // a * ( 1 - r^n ) / ( 1 - r ), here a is 1.
+    return (1.0 - pow(commonRatio, numTerms))
+         / (1.0 - commonRatio);
+}
+
+vec3 atmosphere(
+    vec3 r, vec3 r0, vec3 pSun,
+    float rPlanet, float rAtmos,
+    vec3 kRlh, float kMie, float shRlh, float shMie,
+    float g) {
+
     // Normalize the sun and view directions.
     pSun = normalize(pSun);
     r = normalize(r);
@@ -26,7 +41,8 @@ vec3 atmosphere(vec3 r, vec3 r0, vec3 pSun, float iSun, float rPlanet, float rAt
     vec2 p = rsi(r0, r, rAtmos);
     if (p.x > p.y) return vec3(0,0,0);
     p.y = min(p.y, rsi(r0, r, rPlanet).x);
-    float iStepSize = (p.y - p.x) / float(iSteps);
+    float iStepSize = (p.y - p.x)
+                    / geometricSeries(iStepGrowth, float(iSteps));
 
     // Initialize the primary ray time.
     float iTime = 0.0;
@@ -49,6 +65,8 @@ vec3 atmosphere(vec3 r, vec3 r0, vec3 pSun, float iSun, float rPlanet, float rAt
     // Sample the primary ray.
     for (int i = 0; i < iSteps; i++) {
 
+if (i != -1) {
+
         // Calculate the primary ray sample position.
         vec3 iPos = r0 + r * (iTime + iStepSize * 0.5);
 
@@ -64,7 +82,8 @@ vec3 atmosphere(vec3 r, vec3 r0, vec3 pSun, float iSun, float rPlanet, float rAt
         iOdMie += odStepMie;
 
         // Calculate the step size of the secondary ray.
-        float jStepSize = rsi(iPos, pSun, rAtmos).y / float(jSteps);
+        float jStepSize = rsi(iPos, pSun, rAtmos).y
+                        / geometricSeries(jStepGrowth, float(jSteps));
 
         // Initialize the secondary ray time.
         float jTime = 0.0;
@@ -88,6 +107,7 @@ vec3 atmosphere(vec3 r, vec3 r0, vec3 pSun, float iSun, float rPlanet, float rAt
 
             // Increment the secondary ray time.
             jTime += jStepSize;
+            jStepSize *= jStepGrowth;
         }
 
         // Calculate attenuation.
@@ -96,14 +116,14 @@ vec3 atmosphere(vec3 r, vec3 r0, vec3 pSun, float iSun, float rPlanet, float rAt
         // Accumulate scattering.
         totalRlh += odStepRlh * attn;
         totalMie += odStepMie * attn;
-
+}
         // Increment the primary ray time.
         iTime += iStepSize;
-
+        iStepSize *= iStepGrowth;
     }
 
     // Calculate and return the final color.
-    return iSun * (pRlh * kRlh * totalRlh + pMie * kMie * totalMie);
+    return (pRlh * kRlh * totalRlh + pMie * kMie * totalMie);
 }
 
 #pragma glslify: export(atmosphere)
