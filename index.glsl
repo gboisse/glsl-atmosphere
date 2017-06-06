@@ -5,6 +5,15 @@
 #define iStepGrowth 1.15
 #define jStepGrowth 1.15
 
+// Frostbite, see the `a` in:
+// https://www.youtube.com/watch?v=zs0oYjwjNEo
+// something related to Bruneton's 2008 paper.
+// not sure i'm applying this properly but whatever.
+#define mieExtinctionMul 1.11 // 1.11
+
+// why the fuck do i need to crank this shit
+#define ozoMul 6.00
+
 vec2 rsi(vec3 r0, vec3 rd, float sr) {
     // ray-sphere intersection that assumes
     // the sphere is centered at the origin.
@@ -59,8 +68,9 @@ vec3 atmosphere1(
     float mu = dot(r, pSun);
     float mumu = mu * mu;
     float gg = g * g;
-    float pRlh = 3.0 / (16.0 * PI) * (1.0 + mumu);
-    float pMie = 3.0 / (8.0 * PI) * ((1.0 - gg) * (mumu + 1.0)) / (pow(1.0 + gg - 2.0 * mu * g, 1.5) * (2.0 + gg));
+
+    float phaseRlh = 3.0 / (16.0 * PI) * (1.0 + mumu);
+    float phaseMie = 3.0 / (8.0 * PI) * ((1.0 - gg) * (mumu + 1.0)) / (pow(1.0 + gg - 2.0 * mu * g, 1.5) * (2.0 + gg));
 
     // Sample the primary ray.
     for (int i = 0; i < iSteps; i++) {
@@ -111,7 +121,9 @@ if (i != -1) {
         }
 
         // Calculate attenuation.
-        vec3 attn = exp(-(kMie * (iOdMie + jOdMie) + kRlh * (iOdRlh + jOdRlh)));
+        vec3 attn = exp(
+            -(   kMie * (iOdMie + jOdMie)
+               + kRlh * (iOdRlh + jOdRlh)));
 
         // Accumulate scattering.
         totalRlh += odStepRlh * attn;
@@ -123,14 +135,16 @@ if (i != -1) {
     }
 
     // Calculate and return the final color.
-    return (pRlh * kRlh * totalRlh + pMie * kMie * totalMie);
+    return phaseRlh * kRlh * totalRlh
+         + phaseMie * kMie * totalMie * mieExtinctionMul;
 }
 
 
 vec3 atmosphere2(
     vec3 r, vec3 r0, vec3 pSun,
     float rPlanet, float rAtmos,
-    vec3 kRlh, float kMie, float shRlh, float shMie,
+    vec3 kRlh, float kMie, vec3 kOzo,
+    float shRlh, float shMie,
     float g) {
 
     // Normalize the sun and view directions.
@@ -159,8 +173,9 @@ vec3 atmosphere2(
     float mu = dot(r, pSun);
     float mumu = mu * mu;
     float gg = g * g;
-    float pRlh = 3.0 / (16.0 * PI) * (1.0 + mumu);
-    float pMie = 3.0 / (8.0 * PI) * ((1.0 - gg) * (mumu + 1.0)) / (pow(1.0 + gg - 2.0 * mu * g, 1.5) * (2.0 + gg));
+
+    float phaseRlh = 3.0 / (16.0 * PI) * (1.0 + mumu);
+    float phaseMie = 3.0 / (8.0 * PI) * ((1.0 - gg) * (mumu + 1.0)) / (pow(1.0 + gg - 2.0 * mu * g, 1.5) * (2.0 + gg));
 
     // Sample the primary ray.
     for (int i = 0; i < iSteps; i++) {
@@ -211,7 +226,10 @@ if (i != -1) {
         }
 
         // Calculate attenuation.
-        vec3 attn = exp(-(kMie * (iOdMie + jOdMie) + kRlh * (iOdRlh + jOdRlh)));
+        vec3 attn = exp(
+            -(   kMie * (iOdMie + jOdMie)
+               + kRlh * (iOdRlh + jOdRlh)
+               + kOzo * (iOdRlh + jOdRlh) * ozoMul));
 
         // Accumulate scattering.
         totalRlh += odStepRlh * attn;
@@ -223,7 +241,8 @@ if (i != -1) {
     }
 
     // Calculate and return the final color.
-    return (pRlh * kRlh * totalRlh + pMie * kMie * totalMie);
+    return phaseRlh * kRlh * totalRlh
+         + phaseMie * kMie * totalMie * mieExtinctionMul;
 }
 
 
@@ -232,7 +251,8 @@ if (i != -1) {
 vec3 atmosphere(
     vec3 r, vec3 r0, vec3 pSun,
     float rPlanet, float rAtmos,
-    vec3 kRlh, float kMie, float shRlh, float shMie,
+    vec3 kRlh, float kMie, vec3 kOzo,
+    float shRlh, float shMie,
     float g)
 {
     if (sin(r.x * 10.0) < 0.0) {
@@ -250,7 +270,8 @@ vec3 atmosphere(
         return atmosphere2(
             r, r0, pSun,
             rPlanet, rAtmos,
-            kRlh, kMie, shRlh, shMie,
+            kRlh, kMie, kOzo,
+            shRlh, shMie,
             g);
     }
 }

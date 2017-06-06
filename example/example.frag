@@ -52,7 +52,7 @@ void main() {
         vec3(0,6371e3,0),               // ray origin
 
         // sun pos
-        vec3(0, -0.025, +1),             // position of the sun
+        vec3(0, +0.795, +1),             // position of the sun
 
         6371e3,                         // radius of the planet in meters
         6471e3,                         // radius of the atmosphere in meters
@@ -61,8 +61,15 @@ void main() {
         // ray: vec3(5.8e-6, 13.5e-6, 33.1e-6)
         // mie: >= 3e-6 (pollution, water, dust)
 
+        /*
         vec3(5.5e-6, 13.0e-6, 22.4e-6), // Rayleigh scattering coefficient
+        /*/
+        vec3(5.8e-6, 13.5e-6, 33.1e-6), // frostbite
+        //*/
+
         21e-6,                          // Mie scattering coefficient
+
+        vec3(3.426e-7, 8.298e-7, 0.356e-7), // Ozone extinction, frostbite
 
         // ozone in frostbite:
         // (3.426, 8.298, 0.356) m-1 x 6e-5%
@@ -73,7 +80,7 @@ void main() {
     );
 
     // Apply sun/moon/whatever intensity.
-    vec3 color = scatter * 250.0;        // intensity of the sun
+    vec3 color = scatter * 150.0;        // intensity of the sun
 
     // Apply exposure.
     //*
@@ -81,7 +88,7 @@ void main() {
     color = 1.0 - exp(-1.0 * color);
     // color = pow(color, vec3(2.2));
     /*/
-    color *= 0.10;
+    // color *= 0.10;
     // color = color / (1.0 + color);
     // color = pow(color, vec3(1.0 / 2.2));
     color = max(vec3(0.0), color - 0.004);
